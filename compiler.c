@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#define STRUCT_TOKEN_WIDTH 64
+
 #define INT 0
 #define CHAR 1
 #define FLOAT 2
@@ -53,9 +55,9 @@ int main(int argc, char* argv[] ){
         
         /**********      Define TokenStruct used to gather tokens       **********/
         struct _token{
-                int size_of_image;
+                int sizeOfImage;
                 int tokenType;
-                char image[];
+                char image[STRUCT_TOKEN_WIDTH];
         };
         typedef struct _token TokenStruct;
         
@@ -65,23 +67,20 @@ int main(int argc, char* argv[] ){
         
         
         /**********     loop to tokenize source         *********/
-        const char reservedKeywords = {"int","char","float","double","struct","union",
-                                        "long","short","unsigned","auto","extern",
-                                        "register","typedef","static","goto","return",
-                                        "sizeof","break","continue","if","else","for",
-                                        "do","while","switch","case","default","entry" };
+        const char * reservedSymbols[] = {"int","char","float","double","struct","union","long","short","unsigned","auto","extern","register","typedef","static","goto","return","sizeof","break","continue","if","else","for","do","while","switch","case","default","entry" };
         int tokenizeIndex;
         int floor = 0;
+        int tokenLimit = ENTRY;         //if you want to expand reservedSymbol make sure to change this value
         int biggest, tokenType, biggestTokenType;
         biggest = -1; tokenType = INT; biggestTokenType = -1;
-        while(floor!=size){
+        while(floor<size){
                 int reservedIndex = 0;
                 for(tokenizeIndex=floor; tokenizeIndex<size; tokenizeIndex++){
-                        if(tokenType<=ENTRY){
-                                if(source[tokenizeIndex]==reservedKeywords[tokenType][reservedIndex]){
+                        if(tokenType<=tokenLimit){
+                                if(source[tokenizeIndex]==reservedSymbols[tokenType][reservedIndex]){
                                         reservedIndex++;
                                         
-                                }else if(reserved_keywords[tokenType][reservedIndex]=='\0'){
+                                }else if(reservedSymbols[tokenType][reservedIndex]=='\0'){
                                         /****     Check if this token is biggest     ****/
                                         if(biggest<reservedIndex){
                                                 biggest = reservedIndex;
@@ -94,6 +93,23 @@ int main(int argc, char* argv[] ){
                         }
                 }
                 tokenType++;
+                if(tokenType>tokenLimit){
+                        /******     Largest reserved symbol found     *******/
+                        tokenList[tokenListMax].sizeOfImage = biggest;
+                        tokenList[tokenListMax].tokenType = biggestTokenType;
+                        /*** copy string ***/
+                        int copyIndex;
+                        for(copyIndex=0; copyIndex < STRUCT_TOKEN_WIDTH; copyIndex++){
+                                tokenList[tokenListMax].image[copyIndex]=reservedSymbols[biggestTokenType][copyIndex];
+                                if(copyIndex>=biggest)break;   //break after all of image is copied
+                        }
+                        floor += biggest;
+                        tokenListMax++;
+                }
+        }
+        int showIndex = 0;
+        for(showIndex=0; showIndex<tokenListMax; showIndex++){
+                printf("%d\t%d\t%s\n", tokenList[showIndex].sizeOfImage, tokenList[showIndex].tokenType, tokenList[showIndex].image);
         }
         
         
