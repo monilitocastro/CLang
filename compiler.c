@@ -77,6 +77,10 @@ int main(int argc, char* argv[] ){
                 int reservedIndex = 0;
                 for(tokenizeIndex=floor; tokenizeIndex<size; tokenizeIndex++){
                         if(tokenType<=tokenLimit){
+                                if(source[tokenizeIndex]=='\n'){
+                                        /*******        Guard for empty lines        **********/
+                                        floor++;
+                                }
                                 if(source[tokenizeIndex]==reservedSymbols[tokenType][reservedIndex]){
                                         reservedIndex++;
                                         
