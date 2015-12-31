@@ -57,6 +57,8 @@ int main(int argc, char* argv[] ){
         struct _token{
                 int sizeOfImage;
                 int tokenType;
+                int row;
+                int column;
                 char image[STRUCT_TOKEN_WIDTH];
         };
         typedef struct _token TokenStruct;
@@ -70,6 +72,8 @@ int main(int argc, char* argv[] ){
         const char * reservedSymbols[] = {"int","char","float","double","struct","union","long","short","unsigned","auto","extern","register","typedef","static","goto","return","sizeof","break","continue","if","else","for","do","while","switch","case","default","entry" };
         int tokenizeIndex;
         int floor = 0;
+        int row = 0;
+        int column = 0;
         int tokenLimit = ENTRY;         //if you want to expand reservedSymbol make sure to change this value
         int biggest, tokenType, biggestTokenType;
         biggest = -1; tokenType = INT; biggestTokenType = -1;
@@ -80,6 +84,13 @@ int main(int argc, char* argv[] ){
                                 if(source[tokenizeIndex]=='\n'){
                                         /*******        Guard for empty lines        **********/
                                         floor++;
+                                        row++;
+                                        column=0;
+                                }
+                                if(source[tokenizeIndex]==' '){
+                                        /***** ignoring spaces  *****/
+                                        floor++;
+                                        column++;
                                 }
                                 if(source[tokenizeIndex]==reservedSymbols[tokenType][reservedIndex]){
                                         reservedIndex++;
@@ -101,19 +112,24 @@ int main(int argc, char* argv[] ){
                         /******     Largest reserved symbol found     *******/
                         tokenList[tokenListMax].sizeOfImage = biggest;
                         tokenList[tokenListMax].tokenType = biggestTokenType;
+                        tokenList[tokenListMax].row = row;
+                        tokenList[tokenListMax].column = column;
                         /*** copy string ***/
                         int copyIndex;
                         for(copyIndex=0; copyIndex < STRUCT_TOKEN_WIDTH; copyIndex++){
                                 tokenList[tokenListMax].image[copyIndex]=reservedSymbols[biggestTokenType][copyIndex];
                                 if(copyIndex>=biggest)break;   //break after all of image is copied
                         }
-                        printf("%d\t%d\t%d\n", biggest, biggestTokenType,floor);
+                        printf("%d\t%d\t%d row=%d column=%d\n", biggest, biggestTokenType,floor, tokenList[tokenListMax].row, tokenList[tokenListMax].column);
                         floor += biggest;
+                        column += biggest;
                         tokenListMax++;
                         biggest = -1; biggestTokenType = -1; tokenType = INT;
                         if(source[floor]=='\n'){
                                 //printf("AAAAAAAAAAAH\n");
                                 floor++;
+                                row++;
+                                column=0;
                         }else if(source[floor]=='\0'){
                                 floor++;
                         }
