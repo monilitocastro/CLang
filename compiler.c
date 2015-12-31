@@ -103,13 +103,21 @@ int main(int argc, char* argv[] ){
                                 tokenList[tokenListMax].image[copyIndex]=reservedSymbols[biggestTokenType][copyIndex];
                                 if(copyIndex>=biggest)break;   //break after all of image is copied
                         }
+                        printf("%d\t%d\t%d\n", biggest, biggestTokenType,floor);
                         floor += biggest;
                         tokenListMax++;
+                        biggest = -1; biggestTokenType = -1; tokenType = INT;
+                        if(source[floor]=='\n'){
+                                //printf("AAAAAAAAAAAH\n");
+                                floor++;
+                        }else if(source[floor]=='\0'){
+                                floor++;
+                        }
                 }
         }
         int showIndex = 0;
         for(showIndex=0; showIndex<tokenListMax; showIndex++){
-                printf("%d\t%d\t%s\n", tokenList[showIndex].sizeOfImage, tokenList[showIndex].tokenType, tokenList[showIndex].image);
+                //printf("%d\t%d\t%s\n", tokenList[showIndex].sizeOfImage, tokenList[showIndex].tokenType, tokenList[showIndex].image);
         }
         
         
