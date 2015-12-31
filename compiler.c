@@ -79,7 +79,9 @@ int main(int argc, char* argv[] ){
         biggest = -1; tokenType = INT; biggestTokenType = -1;
         while(floor<size){
                 int reservedIndex = 0;
+                int oldColumn = column;
                 for(tokenizeIndex=floor; tokenizeIndex<size; tokenizeIndex++){
+                        column++;
                         if(tokenType<=tokenLimit){
                                 if(source[tokenizeIndex]=='\n'){
                                         /*******        Guard for empty lines        **********/
@@ -107,6 +109,7 @@ int main(int argc, char* argv[] ){
                                 }
                         }
                 }
+                column=oldColumn;
                 tokenType++;
                 if(tokenType>tokenLimit){
                         /******     Largest reserved symbol found     *******/
