@@ -76,6 +76,7 @@ int main(int argc, char* argv[] ){
         int floor = 0;
         int incrNewLine = 0;
         int newLineCount = 1;
+        int posOfLastNewLine = 0;
         int tokenLimit = ENTRY;         //if you want to expand reservedSymbol make sure to change this value
         int biggest, tokenType, biggestTokenType;
         biggest = -1; tokenType = INT; biggestTokenType = -1;
@@ -87,6 +88,7 @@ int main(int argc, char* argv[] ){
                                         /*******        Guard for empty lines        **********/
                                         floor++;
                                         incrNewLine = 1;
+                                        //posOfLastNewLine = tokenizeIndex;
                                 }else if(source[tokenizeIndex]==' '){
                                         /***** ignoring spaces  *****/
                                         floor++;
@@ -114,6 +116,7 @@ int main(int argc, char* argv[] ){
                         tokenList[tokenListMax].sizeOfImage = biggest;
                         tokenList[tokenListMax].tokenType = biggestTokenType;
                         tokenList[tokenListMax].row = newLineCount;
+                        tokenList[tokenListMax].column = posOfLastNewLine;
                         if(incrNewLine==1){
                                 newLineCount++;
                                 incrNewLine=0;
@@ -131,9 +134,9 @@ int main(int argc, char* argv[] ){
                 }
         }
         int showIndex = 0;
-        printf("%s\t%s\t%8s\t%s\n", "size","tokenType","IMAGE","row");
+        printf("%s\t%s\t%8s\t%s\t%s\n", "size","tokenType","IMAGE","row","column");
         for(showIndex=0; showIndex<tokenListMax; showIndex++){
-                printf("%d\t%d\t%16s\t%d\n", tokenList[showIndex].sizeOfImage, tokenList[showIndex].tokenType, tokenList[showIndex].image, tokenList[showIndex].row);
+                printf("%d\t%d\t%16s\t%d\t%d\n", tokenList[showIndex].sizeOfImage, tokenList[showIndex].tokenType, tokenList[showIndex].image, tokenList[showIndex].row,tokenList[showIndex].column);
         }
         
         
