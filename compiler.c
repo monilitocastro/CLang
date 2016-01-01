@@ -69,30 +69,29 @@ int main(int argc, char* argv[] ){
         
         
         /**********     loop to tokenize source         *********/
-        const char * reservedSymbols[] = {"int","char","float","double","struct","union","long","short","unsigned","auto","extern","register","typedef","static","goto","return","sizeof","break","continue","if","else","for","do","while","switch","case","default","entry" };
+        const char * reservedSymbols[] = {"int","char","float","double","struct","union","long","short",
+                        "unsigned","auto","extern","register","typedef","static","goto","return",
+                        "sizeof","break","continue","if","else","for","do","while","switch","case","default","entry" };
         int tokenizeIndex;
         int floor = 0;
-        int row = 0;
-        int column = 0;
+        int incrNewLine = 0;
+        int newLineCount = 1;
         int tokenLimit = ENTRY;         //if you want to expand reservedSymbol make sure to change this value
         int biggest, tokenType, biggestTokenType;
         biggest = -1; tokenType = INT; biggestTokenType = -1;
         while(floor<size){
                 int reservedIndex = 0;
-                int oldColumn = column;
                 for(tokenizeIndex=floor; tokenizeIndex<size; tokenizeIndex++){
-                        column++;
                         if(tokenType<=tokenLimit){
                                 if(source[tokenizeIndex]=='\n'){
                                         /*******        Guard for empty lines        **********/
                                         floor++;
-                                        row++;
-                                        column=0;
-                                }
-                                if(source[tokenizeIndex]==' '){
+                                        incrNewLine = 1;
+                                }else if(source[tokenizeIndex]==' '){
                                         /***** ignoring spaces  *****/
                                         floor++;
-                                        column++;
+                                }else if(source[tokenizeIndex]=='\0'){
+                                        floor++;
                                 }
                                 if(source[tokenizeIndex]==reservedSymbols[tokenType][reservedIndex]){
                                         reservedIndex++;
@@ -109,38 +108,32 @@ int main(int argc, char* argv[] ){
                                 }
                         }
                 }
-                column=oldColumn;
                 tokenType++;
                 if(tokenType>tokenLimit){
                         /******     Largest reserved symbol found     *******/
                         tokenList[tokenListMax].sizeOfImage = biggest;
                         tokenList[tokenListMax].tokenType = biggestTokenType;
-                        tokenList[tokenListMax].row = row;
-                        tokenList[tokenListMax].column = column;
+                        tokenList[tokenListMax].row = newLineCount;
+                        if(incrNewLine==1){
+                                newLineCount++;
+                                incrNewLine=0;
+                        }
                         /*** copy string ***/
                         int copyIndex;
                         for(copyIndex=0; copyIndex < STRUCT_TOKEN_WIDTH; copyIndex++){
                                 tokenList[tokenListMax].image[copyIndex]=reservedSymbols[biggestTokenType][copyIndex];
                                 if(copyIndex>=biggest)break;   //break after all of image is copied
                         }
-                        printf("%d\t%d\t%d row=%d column=%d\n", biggest, biggestTokenType,floor, tokenList[tokenListMax].row, tokenList[tokenListMax].column);
-                        floor += biggest;
-                        column += biggest;
+                        //printf("%d\t%d\t%d row=%d\n", biggest, biggestTokenType,floor, tokenList[tokenListMax].row);
                         tokenListMax++;
+                        floor += biggest;
                         biggest = -1; biggestTokenType = -1; tokenType = INT;
-                        if(source[floor]=='\n'){
-                                //printf("AAAAAAAAAAAH\n");
-                                floor++;
-                                row++;
-                                column=0;
-                        }else if(source[floor]=='\0'){
-                                floor++;
-                        }
                 }
         }
         int showIndex = 0;
+        printf("%s\t%s\t%8s\t%s\n", "size","tokenType","IMAGE","row");
         for(showIndex=0; showIndex<tokenListMax; showIndex++){
-                //printf("%d\t%d\t%s\n", tokenList[showIndex].sizeOfImage, tokenList[showIndex].tokenType, tokenList[showIndex].image);
+                printf("%d\t%d\t%16s\t%d\n", tokenList[showIndex].sizeOfImage, tokenList[showIndex].tokenType, tokenList[showIndex].image, tokenList[showIndex].row);
         }
         
         
