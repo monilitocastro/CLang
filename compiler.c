@@ -1,15 +1,14 @@
 /***
 *       This C Compiler is implemented so that it can compile itself.
-*       To do C language features used must be the most basic functionality.
+*       Only the most basic C language features must be used.
 *       So do not use features that would make this compiler source not compile.
 *       This may mean not using string.h, malloc functions, etc.
 ***/
 #include <stdio.h>
 #include <stdlib.h>
-//take away string.h before releasing
 #define STRUCT_TOKEN_WIDTH 64
+#define LEXER_ERROR -9999
 
-#define DOLLAR 100
 #define INT 0
 #define CHAR 1
 #define FLOAT 2
@@ -38,12 +37,53 @@
 #define CASE 25
 #define DEFAULT 26
 #define ENTRY 27
-#define ADD_OP 28
-#define SUBTRACT_OP 29
-#define MULT_OP 31
+
+#define INCREMENT 28
+#define DECREMENT 29
+#define L_PAREN 30
+#define R_PAREN 31
+#define L_SQ_BRACK 32
+#define R_SQ_BRACK 33
+#define PERIOD 34
+#define RIGHT_ARROW 35
+#define ADD_OP  36
+#define SUBTRACT_OP 37 
+#define LOGICAL_NOT 38
+#define BITW_NOT 39
+#define AMPERSAND 40
+#define ASTR_MULT_OP 41
+#define DIV_OP 42
+#define MODULO 43
+#define BITW_L_SHIFT 44
+#define BITW_R_SHIFT 45
+
+#define LESS 46
+#define LESS_EQUAL 47
+#define GREATER 48
+#define GREATER_EQUAL 49
+#define EQUAL 50
+#define NOT_EQUAL 51
+#define BITW_XOR 52
+#define BITW_OR 53
+#define LOGICAL_AND 54
+#define LOGICAL_OR 55
+#define QUESTION_MARK 56
+#define COLON 57
+#define ASSIGN_DIRECT 58
+#define ASSIGN_BYSUM 59
+#define ASSIGN_BYDIF 60
+#define ASSIGN_BYPROD 61
+#define ASSIGN_BYDIV 62
+#define ASSIGN_BYMOD 63
+#define ASSIGN_BY_BITW_LSHIFT 64
+#define ASSIGN_BY_BITW_RSHIFT 65
+#define ASSIGN_BY_BITW_AND 66
+#define ASSIGN_BY_BITW_OR 67
+#define SEMICOLON 68
+#define COMMA 69
 
 //UPDATE THIS so that it is 1 greater than the max of the tokenTypes
-#define RESERVED_SYMBOL_LIMIT 32
+#define RESERVED_SYMBOL_LIMIT 70
 struct _token{
         int sizeOfImage;
         int tokenType;
@@ -54,11 +94,13 @@ struct _token{
 
 typedef struct _token TokenStruct;
 
-/**********     loop to tokenize source         *********/
-char * reservedSymbols[] = {"int","char","float","double","struct","union","long","short",
+/**********     string array for all reserved symbols including keywords and operators         *********/
+const char * reservedSymbols[] = {"int","char","float","double","struct","union","long","short",
                 "unsigned","auto","extern","register","typedef","static","goto","return",
                 "sizeof","break","continue","if","else","for","do","while","switch","case","default","entry",
-                "+", "-", "*"};
+                "++", "--","(",")","[","]",".","->","+","-","!","~","&","*","/","%","<<",">>",
+                "<","<=",">",">=","==","!=","^","|","&&","||","?",":","=","+=","-=","*=","/=","%=",
+                "<<=",">>=","&=","|=",";",","};
 
 TokenStruct next();
 int hasNext();
@@ -96,7 +138,7 @@ int main(int argc, char* argv[] ){
         while(hasNext() ){
                 ret = next();
                 printf("tokenType=%d sizeOfImage=%d row=%d column=%d image=%s\n",ret.tokenType, ret.sizeOfImage, ret.row, ret.column, ret.image);
-                if(strcmp(ret.image, "ERROR_SYMBOL_NOT_RECOGNIZED")==0)return 0;
+                if(ret.tokenType==LEXER_ERROR)return 0;
         }
         
 return 0;
@@ -114,7 +156,7 @@ TokenStruct next(){
                 }
                 sourcePointer++;
         }
-        TokenStruct result = {-9999, -9999, newLines+1, column, "ERROR_SYMBOL_NOT_RECOGNIZED"};
+        TokenStruct result = {LEXER_ERROR, LEXER_ERROR, newLines+1, column, "ERROR_SYMBOL_NOT_RECOGNIZED"};
 
         /*********    set sourcePointer past the last character of a comment    **********/
         
@@ -159,21 +201,6 @@ TokenStruct next(){
                 result.row = newLines + 1;
                 result.column = column;
                 column+=longestWidth;
-        }else{
-                if(*sourcePointer=='\0'){
-                        result.image[0]='D';
-                        result.image[1]='O';
-                        result.image[2]='L';
-                        result.image[3]='L';
-                        result.image[4]='A';
-                        result.image[5]='R';
-                        result.image[6]='\0';
-                        result.sizeOfImage = 1;
-                        result.tokenType = DOLLAR;
-                        result.row = newLines+1;
-                        result.column = column;
-                        column+=1;
-                }
         }
         result.image[longestWidth]='\0';
         
@@ -182,7 +209,7 @@ TokenStruct next(){
 }
 
 int hasNext(){
-        if(*sourcePointer=='\0'){
+        if(*(sourcePointer+1)=='\0'){
                 return 0;
         }else{
                 return 1;
