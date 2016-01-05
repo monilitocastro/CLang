@@ -30,9 +30,33 @@
 #define CASE 25
 #define DEFAULT 26
 #define ENTRY 27
+
+
+//UPDATE THIS to reflect the last of the tokens
+#define RESERVED_SYMBOL_LIMIT 29
+struct _token{
+        int sizeOfImage;
+        int tokenType;
+        int row;
+        int column;
+        char image[STRUCT_TOKEN_WIDTH];
+};
+
+typedef struct _token TokenStruct;
+
+/**********     loop to tokenize source         *********/
+char * reservedSymbols[] = {"int","char","float","double","struct","union","long","short",
+                "unsigned","auto","extern","register","typedef","static","goto","return",
+                "sizeof","break","continue","if","else","for","do","while","switch","case","default","entry" };
+
+TokenStruct next();
+int hasNext();
+char * sourcePointer;
+int newLines, column;
+
 int main(int argc, char* argv[] ){
         if(argc==1){
-                printf("Usage: none yet\n");
+                printf("Usage: ./compiler source.c\n");
                 return 0;
         }
         FILE *fp;
@@ -45,101 +69,89 @@ int main(int argc, char* argv[] ){
         int size = ftell(fp);
         fseek(fp,0L,SEEK_SET);
         printf("size_t size=%d\n",size);
+        
+        /***      INIT        ***/
         char source[size];
+        sourcePointer = &(source[0]);
+        newLines=0; column=0;
         
         /*****          Load characters from source into char array             ****/
         int fileInd;
         for(fileInd=0; fileInd<size; fileInd++){
                 source[fileInd]=fgetc(fp);
         }
+        TokenStruct ret = next();
+        printf("%d\n",ret.tokenType);
         
-        /**********      Define TokenStruct used to gather tokens       **********/
-        struct _token{
-                int sizeOfImage;
-                int tokenType;
-                int row;
-                int column;
-                char image[STRUCT_TOKEN_WIDTH];
-        };
-        typedef struct _token TokenStruct;
-        
-        const int size_of_tokenList = 1024;
-        TokenStruct tokenList[size_of_tokenList];
-        int tokenListMax=0;
-        
-        
-        /**********     loop to tokenize source         *********/
-        const char * reservedSymbols[] = {"int","char","float","double","struct","union","long","short",
-                        "unsigned","auto","extern","register","typedef","static","goto","return",
-                        "sizeof","break","continue","if","else","for","do","while","switch","case","default","entry" };
-        int tokenizeIndex;
-        int floor = 0;
-        int incrNewLine = 0;
-        int newLineCount = 1;
-        int posOfLastNewLine = 0;
-        int tokenLimit = ENTRY;         //if you want to expand reservedSymbol make sure to change this value
-        int biggest, tokenType, biggestTokenType;
-        biggest = -1; tokenType = INT; biggestTokenType = -1;
-        while(floor<size){
-                int reservedIndex = 0;
-                for(tokenizeIndex=floor; tokenizeIndex<size; tokenizeIndex++){
-                        if(tokenType<=tokenLimit){
-                                if(source[tokenizeIndex]=='\n'){
-                                        /*******        Guard for empty lines        **********/
-                                        floor++;
-                                        incrNewLine = 1;
-                                        //posOfLastNewLine = tokenizeIndex;
-                                }else if(source[tokenizeIndex]==' '){
-                                        /***** ignoring spaces  *****/
-                                        floor++;
-                                }else if(source[tokenizeIndex]=='\0'){
-                                        floor++;
-                                }
-                                if(source[tokenizeIndex]==reservedSymbols[tokenType][reservedIndex]){
-                                        reservedIndex++;
-                                        
-                                }else if(reservedSymbols[tokenType][reservedIndex]=='\0'){
-                                        /****     Check if this token is biggest     ****/
-                                        if(biggest<reservedIndex){
-                                                biggest = reservedIndex;
-                                                biggestTokenType = tokenType;
-                                        }
-                                        break;
-                                }else{
-                                        break;
-                                }
-                        }
-                }
-                tokenType++;
-                if(tokenType>tokenLimit){
-                        /******     Largest reserved symbol found     *******/
-                        tokenList[tokenListMax].sizeOfImage = biggest;
-                        tokenList[tokenListMax].tokenType = biggestTokenType;
-                        tokenList[tokenListMax].row = newLineCount;
-                        tokenList[tokenListMax].column = posOfLastNewLine;
-                        if(incrNewLine==1){
-                                newLineCount++;
-                                incrNewLine=0;
-                        }
-                        /*** copy string ***/
-                        int copyIndex;
-                        for(copyIndex=0; copyIndex < STRUCT_TOKEN_WIDTH; copyIndex++){
-                                tokenList[tokenListMax].image[copyIndex]=reservedSymbols[biggestTokenType][copyIndex];
-                                if(copyIndex>=biggest)break;   //break after all of image is copied
-                        }
-                        //printf("%d\t%d\t%d row=%d\n", biggest, biggestTokenType,floor, tokenList[tokenListMax].row);
-                        tokenListMax++;
-                        floor += biggest;
-                        biggest = -1; biggestTokenType = -1; tokenType = INT;
-                }
-        }
-        int showIndex = 0;
-        printf("%s\t%s\t%8s\t%s\t%s\n", "size","tokenType","IMAGE","row","column");
-        for(showIndex=0; showIndex<tokenListMax; showIndex++){
-                printf("%d\t%d\t%16s\t%d\t%d\n", tokenList[showIndex].sizeOfImage, tokenList[showIndex].tokenType, tokenList[showIndex].image, tokenList[showIndex].row,tokenList[showIndex].column);
-        }
-        
-        
-        fclose(fp);
 return 0;
+}
+
+TokenStruct next(){
+        /*****     Remove whitespaces and increment newline and column counts      *****/
+        while((*sourcePointer==' ')| (*sourcePointer=='\n') ){
+                if(*sourcePointer==' '){
+                        column++;
+                }else if(*sourcePointer=='\0'){
+                        column=0;
+                        newLines++;
+                }
+                sourcePointer++;
+        }
+        /*********    set sourcePointer past the last character of a comment    **********/
+        
+        
+        /*******      initialize function         ********/
+        TokenStruct result = {-9999, -9999, -9999, -9999, "ERROR_SYMBOL_NOT_RECOGNIZED"};
+        char * tryFloor;
+        int symbolIndex;
+        int longestWidth = -1;
+        int longestToken = -99;
+        
+        
+        /****   Tokenize for reserved symbols including operators   *****/
+        for(symbolIndex=0; symbolIndex<RESERVED_SYMBOL_LIMIT; symbolIndex++){
+                tryFloor = sourcePointer;
+                int isMatched = 0;
+                int charIndex = 0;
+                while( (reservedSymbols[symbolIndex][charIndex]!='\0') | (*tryFloor==reservedSymbols[symbolIndex][charIndex]) ){
+                        tryFloor++;
+                        charIndex++;
+                        if(reservedSymbols[symbolIndex][charIndex]=='\0'){
+                                isMatched = 1;
+                        }
+                }
+                if((isMatched==1) & (longestWidth<(tryFloor-sourcePointer) ) ){
+                        longestWidth = tryFloor - sourcePointer;
+                        longestToken = symbolIndex;
+                }
+        }
+        
+        /**  Tokenize for identifiers and literals     **/
+        
+        
+        /*******      Generate token of longest match       ********/
+        if(longestWidth>0){int copyIndex;
+                for(copyIndex=0; copyIndex<longestWidth; copyIndex++){
+                        printf("%c",*sourcePointer);
+                        result.image[copyIndex]=*sourcePointer;
+                        sourcePointer++;
+                }
+                result.sizeOfImage = longestWidth;
+                result.tokenType  = longestToken;
+                result.row = newLines;
+                result.column = column;
+                column+=longestWidth;
+        }
+        
+        
+        
+        return result;
+}
+
+int hasNext(){
+        if(*sourcePointer=='\0'){
+                return 0;
+        }else{
+                return 1;
+        }
 }
