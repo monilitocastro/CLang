@@ -81,9 +81,15 @@
 #define ASSIGN_BY_BITW_OR 67
 #define SEMICOLON 68
 #define COMMA 69
-
+#define DOUBLE_QUOTE 70
+#define SINGLE_QUOTE 71
 //UPDATE THIS so that it is 1 greater than the max of the tokenTypes
-#define RESERVED_SYMBOL_LIMIT 70
+#define RESERVED_SYMBOL_LIMIT 72
+
+// The following tokenTypes are not in reserverSymbol
+// and hence should reasonably unreachable by adjusting RESERVED_SYMBOL_LIMIT
+#define LIT_DECIMAL 300
+
 struct _token{
         int sizeOfImage;
         int tokenType;
@@ -100,9 +106,12 @@ const char * reservedSymbols[] = {"int","char","float","double","struct","union"
                 "sizeof","break","continue","if","else","for","do","while","switch","case","default","entry",
                 "++", "--","(",")","[","]",".","->","+","-","!","~","&","*","/","%","<<",">>",
                 "<","<=",">",">=","==","!=","^","|","&&","||","?",":","=","+=","-=","*=","/=","%=",
-                "<<=",">>=","&=","|=",";",","};
+                "<<=",">>=","&=","|=",";",",","\"","'"};
 
 TokenStruct next();
+void tokenizeReservedSymbols(int *, int *);
+void tokenizeDecimal(int *, int *);
+
 int hasNext();
 char * sourcePointer;
 int newLines, column;
@@ -162,32 +171,12 @@ TokenStruct next(){
         
         
         /*******      initialize function         ********/
-        
-        char * tryFloor;
-        int symbolIndex;
         int longestWidth = -1;
         int longestToken = -99;
         
         
-        /****   Tokenize for reserved symbols including operators   *****/
-        for(symbolIndex=0; symbolIndex<RESERVED_SYMBOL_LIMIT; symbolIndex++){
-                tryFloor = sourcePointer;
-                int isMatched = 0;
-                int charIndex = 0;
-                while( (reservedSymbols[symbolIndex][charIndex]!='\0') & (*tryFloor==reservedSymbols[symbolIndex][charIndex]) ){
-                        tryFloor++;
-                        charIndex++;
-                        if(reservedSymbols[symbolIndex][charIndex]=='\0'){
-                                isMatched = 1;
-                        }
-                }
-                if((isMatched==1) & (longestWidth<(tryFloor-sourcePointer) ) ){
-                        longestWidth = tryFloor - sourcePointer;
-                        longestToken = symbolIndex;
-                }
-        }
-        
-        /**  Tokenize for identifiers and literals     **/
+        /**** Call tokenizing routines for each type of tokens *****/
+        tokenizeReservedSymbols(&longestWidth, &longestToken);
         
         
         /*******      Generate token of longest match       ********/
@@ -199,13 +188,56 @@ TokenStruct next(){
                 result.sizeOfImage = longestWidth;
                 result.tokenType  = longestToken;
                 result.row = newLines + 1;
-                result.column = column;
+                result.column = column + 1;
                 column+=longestWidth;
         }
         result.image[longestWidth]='\0';
         
         
         return result;
+}
+
+void tokenizeDecimal(int * longestWidth, int * longestToken){
+
+                /****   Tokenize for reserved symbols including operators   *****/
+        char * tryFloor;
+        tryFloor = sourcePointer;
+        int isMatched = 0;
+        while( ('0' <= *tryFloor) & (*tryFloor <= '9') ){
+                tryFloor++;
+                if( !(('0' <= *tryFloor) & (*tryFloor <= '9') ) ){
+                        isMatched = 1;
+                }
+        }
+        if((isMatched==1) & (*longestWidth<(tryFloor-sourcePointer) ) ){
+                *longestWidth = tryFloor - sourcePointer;
+                *longestToken = LIT_DECIMAL;
+        }
+
+}
+
+void tokenizeReservedSymbols(int * longestWidth, int * longestToken){
+
+                /****   Tokenize for reserved symbols including operators   *****/
+        char * tryFloor;
+        int symbolIndex;
+        for(symbolIndex=0; symbolIndex<RESERVED_SYMBOL_LIMIT; symbolIndex++){
+                tryFloor = sourcePointer;
+                int isMatched = 0;
+                int charIndex = 0;
+                while( (reservedSymbols[symbolIndex][charIndex]!='\0') & (*tryFloor==reservedSymbols[symbolIndex][charIndex]) ){
+                        tryFloor++;
+                        charIndex++;
+                        if(reservedSymbols[symbolIndex][charIndex]=='\0'){
+                                isMatched = 1;
+                        }
+                }
+                if((isMatched==1) & (*longestWidth<(tryFloor-sourcePointer) ) ){
+                        *longestWidth = tryFloor - sourcePointer;
+                        *longestToken = symbolIndex;
+                }
+        }
+
 }
 
 int hasNext(){
